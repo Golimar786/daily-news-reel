@@ -10,7 +10,7 @@ const E = (k, d) => (process.env[k] && process.env[k].trim()) || d;
 const DRY_RUN = E("DRY_RUN", "true") === "true"; // true = build video only, don't post
 const CFG = {
   geminiKey: E("GEMINI_API_KEY"),
-  textModel: E("GEMINI_TEXT_MODEL", "gemini-2.5-flash"),
+  textModel: E("GEMINI_TEXT_MODEL", "gemini-3.6-flash"),
   veoModel: E("VEO_MODEL", "veo-3.0-fast-generate-001"),
   maxVeoClips: Number(E("MAX_VEO_CLIPS", "3")), // only used when VISUAL_SOURCE=veo
   visualSource: E("VISUAL_SOURCE", "pexels"), // "pexels" (free) or "veo" (paid)

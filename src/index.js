@@ -36,8 +36,9 @@ async function news(topic, id, label) {
 async function collect() {
   return Promise.all([news("NATION", "national", "राष्ट्रीय समाचार"), news("WORLD", "international", "अंतरराष्ट्रीय समाचार"), news("BUSINESS", "economy", "अर्थव्यवस्था"), news("TECHNOLOGY", "technology", "टेक्नोलॉजी"), news("SPORTS", "sports", "खेल")]);
 }
-async function script(categories) {
-  const sources = categories.map(c => `${c.id} (${c.label}):\n${c.stories.map((s,i)=>`${i+1}. ${s.title} | ${s.source} | ${s.url}`).join("\n")}`).join("\n\n");
+
+  async function script(categories) {
+const sources = categories.map(c => `${c.id} (${c.label}):\n${c.stories.map((s,i)=>`${i+1}. ${s.title} | ${s.source} | ${s.url}`).join("\n")}`).join("\n\n");
   const prompt = `You are the cautious Hindi editor for ${cfg.name}. Return JSON only: {"caption":"string","segments":[{"categoryId":"national","categoryLabel":"string","headline":"string","narration":"string","sourceName":"string","sourceUrl":"string"}]}. Return exactly five segments in order national, international, economy, technology, sports. Each narration must be 55-65 natural Hindi words. Use ONLY supplied headlines. Never invent facts, numbers, quotes, causes, outcomes, or allegations. Keep neutral language and preserve a selected source name and URL.\n\n${sources}`;
   const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${cfg.model}:generateContent?key=${encodeURIComponent(cfg.key)}`, { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{responseMimeType:"application/json",temperature:0.1,maxOutputTokens:4096}}) });
   const body = await r.json(); if (!r.ok) throw new Error(body?.error?.message || "Gemini failed");
@@ -68,7 +69,7 @@ async function title(text, file, f) { await ff(["-f","lavfi","-i","color=c=0x071
 async function main() {
   if (!cfg.key) throw new Error("Add GEMINI_API_KEY as a GitHub Actions secret."); if (!["static","did"].includes(cfg.avatar)) throw new Error("AVATAR_PROVIDER must be static or did.");
   await rm(cfg.work,{recursive:true,force:true}); await mkdir(cfg.work,{recursive:true}); await mkdir(cfg.out,{recursive:true}); const f=await font();
-  console.log("Collecting current headlines…"); const headlines=await collect(); console.log("Writing Hindi bulletin…"); const bulletin=await script(headlines); await writeFile(path.join(cfg.work,"bulletin.json"),JSON.stringify({headlines,bulletin},null,2));
+  console.log("Collecting current headlines…"); const headlines=await collect(); console.log("Writing Hindi bulletin…"); let bulletin;for(let i=0;i<4;i++){try{bulletin=await script(headlines);break}catch(e){if(i===3)throw e;console.warn(`Gemini busy; retry ${i+2}/4`);await wait((i+1)*15000)}} await writeFile(path.join(cfg.work,"bulletin.json"),JSON.stringify({headlines,bulletin},null,2));
   const clips=[await title(cfg.tagline,path.join(cfg.work,"intro.mp4"),f)]; for (const [i,s] of bulletin.segments.entries()) clips.push(await card(s,i+1,f),await anchor(s,i+1,f)); clips.push(await title("देखने के लिए धन्यवाद",path.join(cfg.work,"outro.mp4"),f));
   const list=path.join(cfg.work,"list.txt"); await writeFile(list,clips.map(x=>`file '${x.replace(/'/g,"'\\''")}'`).join("\n")); const final=path.join(cfg.out,"desi-interpol-daily-bulletin.mp4"); await ff(["-f","concat","-safe","0","-i",list,"-c:v","libx264","-pix_fmt","yuv420p","-c:a","aac","-movflags","+faststart",final]); console.log(`Ready: ${final}`); console.log("Review the artifact before publishing.");
 }

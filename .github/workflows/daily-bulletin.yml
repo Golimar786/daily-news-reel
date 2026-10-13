@@ -1,0 +1,52 @@
+name: Desi Interpol Daily Bulletin
+
+on:
+  schedule:
+    - cron: "30 2 * * *" # 8:00 AM India
+    - cron: "30 13 * * *" # 7:00 PM India
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bulletin:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install video and Hindi voice tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-noto-core
+          pip install edge-tts
+      - name: Validate JavaScript
+        run: npm run check
+      - name: Build Desi Interpol bulletin
+        run: node src/index.js
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          CHANNEL_NAME: ${{ vars.CHANNEL_NAME || 'देसी इंटरपोल' }}
+          TAGLINE: ${{ vars.TAGLINE || 'देश-दुनिया की बड़ी ख़बरें' }}
+          ANCHOR_IMAGE_PATH: ${{ vars.ANCHOR_IMAGE_PATH || 'assets/desi-interpol-anchor.jpg' }}
+          AVATAR_PROVIDER: ${{ vars.AVATAR_PROVIDER || 'static' }}
+          DID_API_KEY: ${{ secrets.DID_API_KEY }}
+          DID_ANCHOR_IMAGE_URL: ${{ vars.DID_ANCHOR_IMAGE_URL }}
+          DID_VOICE_ID: ${{ vars.DID_VOICE_ID || 'hi-IN-SwaraNeural' }}
+          EDGE_VOICE: ${{ vars.EDGE_VOICE || 'hi-IN-SwaraNeural' }}
+      - name: Upload video and editorial review files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desi-interpol-bulletin
+          path: |
+            out/
+            work/bulletin.json
+          if-no-files-found: warn
+          retention-days: 7

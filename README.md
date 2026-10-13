@@ -1,41 +1,24 @@
-# Daily News Reel
+# देसी इंटरपोल — Daily Hindi News Bulletin
 
-Every morning and evening this fetches India + world news, writes a short script,
-generates Veo visuals and a voiceover, builds a 9:16 Reel with headlines, and posts
-it to Instagram. It runs free on GitHub Actions, so nothing runs on your PC.
+This complete starter project produces a 9:16 Hindi bulletin with National, International, Economy, Technology, and Sports sections; branded graphics; source-aware script JSON; and your anchor image.
 
-## Cost: FREE by default
-Script = Gemini free tier, visuals = Pexels stock videos, voice = Microsoft Edge TTS,
-running = GitHub Actions free minutes, posting = Instagram API.
+## Install it in your GitHub repository
 
-## 1. Get your keys (all free)
-- GEMINI_API_KEY: aistudio.google.com > Get API key. No billing needed for the free tier.
-- PEXELS_API_KEY: pexels.com/api > sign up > copy key.
-- Voice needs no key. Change voice with variable EDGE_VOICE:
-  hi-IN-SwaraNeural (female) or hi-IN-MadhurNeural (male).
-- IG_USER_ID + IG_ACCESS_TOKEN:
-  1. Instagram must be a Business or Creator account linked to a Facebook Page.
-  2. Create a Meta app (developers.facebook.com) with permissions
-     instagram_basic, instagram_content_publish, pages_show_list, pages_read_engagement.
-  3. Use a System User token from Meta Business Settings. It does not expire.
-     (Normal user tokens die after 60 days, which silently breaks automations.)
-  4. Get the IG user id: GET /me/accounts, then /{page-id}?fields=instagram_business_account
+1. Upload every file from this folder to a new GitHub repository.
+2. Upload your original anchor image as `assets/desi-interpol-anchor.jpg`.
+3. In **Settings → Secrets and variables → Actions → Secrets**, add `GEMINI_API_KEY`.
+4. In **Settings → Secrets and variables → Actions → Variables**, add:
+   - `CHANNEL_NAME` = `देसी इंटरपोल`
+   - `TAGLINE` = `देश-दुनिया की बड़ी ख़बरें`
+   - `AVATAR_PROVIDER` = `static`
+5. Run **Actions → Desi Interpol Daily Bulletin → Run workflow**. Download the `desi-interpol-bulletin` artifact.
 
-## 2. Put it on GitHub
-1. Create a private repo and upload this folder.
-2. Settings > Secrets and variables > Actions:
-   - Secrets: GEMINI_API_KEY, PEXELS_API_KEY, IG_USER_ID, IG_ACCESS_TOKEN
-   - Variables (optional): LANGUAGE, CHANNEL_NAME, EDGE_VOICE, DRY_RUN
-3. Actions tab > Daily News Reel > Run workflow.
-4. Download the "reel" artifact and watch the video.
-5. Happy with it for a few days? Set variable DRY_RUN = false and it starts posting.
+The first test uses Edge TTS plus your still anchor image. Once the graphics and voice are correct, enable natural movement and lip-sync:
 
-## Optional
-- Background music: add assets/music.mp3 (royalty-free).
-- Paid upgrade later: set VISUAL_SOURCE=veo and/or TTS_ENGINE=elevenlabs and add those keys.
-- Test on your PC: install Node 22 + FFmpeg + `pip install edge-tts`, copy .env.example to .env, then
-  npm install && npm run local
+1. Get a D-ID API key and add it as secret `DID_API_KEY`.
+2. Host the same anchor image at a public HTTPS URL and add it as variable `DID_ANCHOR_IMAGE_URL`.
+3. Change `AVATAR_PROVIDER` to `did`.
 
-## Notes
-- GitHub pauses scheduled workflows if the repo has no activity for 60 days. Commit something occasionally.
-- If a run fails, GitHub emails you and the log shows exactly which step broke.
+The project uses D-ID's documented photo-avatar `POST /talks` job and status-polling workflow to create each speaking section. [D-ID documentation](https://docs.d-id.com/docs/v2-photo-avatar-quickstart)
+
+Keep review enabled before publishing. The project deliberately does not auto-post to Instagram until a separate public-video hosting step is configured and you explicitly choose to enable it.

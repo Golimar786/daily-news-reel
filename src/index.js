@@ -11,7 +11,7 @@ const cfg = {
   image: path.resolve(env.ANCHOR_IMAGE_PATH || "assets/desi-interpol-anchor.jpg"),
   avatar: (env.AVATAR_PROVIDER || "static").toLowerCase(),
   didKey: env.DID_API_KEY || "",
-  didImage: env.DID_ANCHOR_URL || "",
+  didImage: env.DID_ANCHOR_IMAGE_URL || "",
   didVoice: env.DID_VOICE_ID || "hi-IN-SwaraNeural",
   edgeVoice: env.EDGE_VOICE || "hi-IN-SwaraNeural",
   work: path.resolve("work"), out: path.resolve("out")
@@ -63,7 +63,7 @@ function fallbackBulletin(categories) {
         categoryId: category.id,
         categoryLabel: category.label,
         headline: story.title,
-        narration: `${story.source} की प्रकाशित रिपोर्ट के अनुसार, ${story.title}। इस बुलेटिन में हम केवल उपलब्ध शीर्षक की जानकारी दे रहे हैं और किसी अतिरिक्त दावा, संख्या या निष्कर्ष को शामिल नहीं कर रहे हैं। इस विषय की आगे की जानकारी के लिए स्क्रीन पर दिए गए मूल स्रोत को देखें।`,
+        narration: `${story.source} की प्रकाशित रिपोर्ट के अनुसार, ${story.title}। इस बुलेटिन में हम केवल उपलब्ध शीर्षक की जानकारी दे रहे हैं और किसी अतिरिक्त दावा, संख्या या निष्कर्ष को शामिल नहीं कर रहे हैं। इस विषय की आगे की जानकारी के लिए स्क्रीन पर दिए गए मूल स्रोत को देखें। समाचार की स्थिति बदल सकती है, इसलिए नवीनतम जानकारी के लिए विश्वसनीय समाचार स्रोत से पुष्टि करें।`,
         sourceName: story.source,
         sourceUrl: story.url
       };
@@ -72,7 +72,7 @@ function fallbackBulletin(categories) {
 }
 async function script(categories) {
   const sources = categories.map(c => `${c.id} (${c.label}):\n${c.stories.map((s,i)=>`${i+1}. ${s.title} | ${s.source} | ${s.url}`).join("\n")}`).join("\n\n");
-  const prompt = `You are the cautious Hindi editor for ${cfg.name}. Return JSON only: {"caption":"string","segments":[{"categoryId":"national","categoryLabel":"string","headline":"string","narration":"string","sourceName":"string"}]}. Return exactly five segments in order national, international, economy, technology, sports. Each narration must be 55-65 natural Hindi words. Use ONLY supplied headlines. Never invent facts, numbers, quotes, causes, outcomes, or allegations. Keep neutral language and preserve a selected source name and URL.\n\n${sources}`;
+  const prompt = `You are the cautious Hindi editor for ${cfg.name}. Return JSON only: {"caption":"string","segments":[{"categoryId":"national","categoryLabel":"string","headline":"string","narration":"string","sourceName":"string","sourceUrl":"string"}]}. Return exactly five segments in order national, international, economy, technology, sports. Each narration must be 55-65 natural Hindi words. Use ONLY supplied headlines. Never invent facts, numbers, quotes, causes, outcomes, or allegations. Keep neutral language and preserve a selected source name and URL.\n\n${sources}`;
   let result;
   try {
     const body = await generateBulletin(prompt);
@@ -89,20 +89,20 @@ async function script(categories) {
 async function didClip(text, index) {
   if (cfg.avatar !== "did") return null;
   if (!cfg.didKey || !cfg.didImage) throw new Error("D-ID mode needs DID_API_KEY and DID_ANCHOR_IMAGE_URL.");
-  const r = await fetch("https://api.d-id.com/talks", {method:"POST",headers:{authorization:`Basic ${cfg.didKey}`,"content-type":"application/json"},body:JSON.stringify({source_url:cfg.didImage,script:{type:"text,provider:{type:"microsoft",voice_id:cfg.didVoice}}})});
-  const job = await r.json(); if (!r.ok || !job.id) throw new Error("D-ID could not create an anchor clip.");
-  for (let i=0;i<90;i++) { await wait(5000); const s=await fetch(`https://api.d-id.com/talks/${job.id}`,{headers:{authorization:`Basic ${cfg.didKey}}}); const j=await s.json(); if (j.status === "done" && j.result_url) { const d=path.join(cfg.work,`raw-${index}.mp4`); await writeFile(d,Buffer.from(await (await fetch(j.result_url)).arrayBuffer())); return d; } if (["error","rejected"].includes(j.status)) throw new Error("D-ID rejected an anchor clip."); }
+  const r = await fetch("https://api.d-id.com/talks", {method:"POST",headers:{authorization:`Basic ${cfg.didKey}`,"content-type":"application/json"},body:JSON.stringify({source_url:cfg.didImage,script:{type:"text",input:text,provider:{type:"microsoft",voice_id:cfg.didVoice}}})});
+  const job = await r.json(); if (!r.ok || !job.id) throw new Error("D-ID could not create the anchor clip.");
+  for (let i=0;i<90;i++) { await wait(5000); const s=await fetch(`https://api.d-id.com/talks/${job.id}`,{headers:{authorization:`Basic ${cfg.didKey}`}}); const j=await s.json(); if (j.status === "done" && j.result_url) { const d=path.join(cfg.work,`raw-${index}.mp4`); await writeFile(d,Buffer.from(await (await fetch(j.result_url)).arrayBuffer())); return d; } if (["error","rejected"].includes(j.status)) throw new Error("D-ID rejected an anchor clip."); }
   throw new Error("D-ID clip timed out.");
 }
 async function card(segment, index, f) {
-  const output=path.join(cfg.work,card-${index}.mp4`); const filter=[`drawbox=x=0:y=0:w=iw:h=ih:color=0x07183d:t=fill`,`drawtext=fontfile='${esc(f)}':text='${esc(cfg.name)}':fontcolor=white:fontsize=74:x=(w-tw)/2:y=540`,`drawtext=fontfile='${esc(f)}':text='${esc(segment.categoryLabel)}':fontcolor=0xffc84d:fontsize=65:x=(w-tw)/2:y=760`,`drawtext=fontfile='${esc(f)}':text='${esc(segment.headline)}':fontcolor=white:fontsize=42:x=(w-tw)/2:y=940`].join(",");
+  const output=path.join(cfg.work,`card-${index}.mp4`); const filter=[`drawbox=x=0:y=0:w=iw:h=ih:color=0x07183d:t=fill`,`drawtext=fontfile='${esc(f)}':text='${esc(cfg.name)}':fontcolor=white:fontsize=74:x=(w-tw)/2:y=540`,`drawtext=fontfile='${esc(f)}':text='${esc(segment.categoryLabel)}':fontcolor=0xffc84d:fontsize=65:x=(w-tw)/2:y=760`,`drawtext=fontfile='${esc(f)}':text='${esc(segment.headline)}':fontcolor=white:fontsize=42:x=(w-tw)/2:y=940`].join(",");
   await ff(["-f","lavfi","-i","color=c=0x07183d:s=1080x1920:r=30:d=3","-f","lavfi","-i","anullsrc=r=44100:cl=stereo","-vf",filter,"-shortest","-c:v","libx264","-pix_fmt","yuv420p","-c:a","aac",output]); return output;
 }
 async function anchor(segment,index,f) {
   const out=path.join(cfg.work,`anchor-${index}.mp4`); const raw=await didClip(`${segment.categoryLabel}. ${segment.narration}`,index); const lower=`drawbox=x=0:y=h-270:w=iw:h=210:color=0xb00020@0.93:t=fill,drawtext=fontfile='${esc(f)}':text='${esc(segment.categoryLabel)}':fontcolor=0xffd76b:fontsize=30:x=55:y=h-240,drawtext=fontfile='${esc(f)}':text='${esc(segment.headline)}':fontcolor=white:fontsize=38:x=55:y=h-180,drawtext=fontfile='${esc(f)}':text='AI एंकर • स्रोत स्क्रीन पर':fontcolor=white:fontsize=25:x=55:y=38`;
   if (raw) { await ff(["-i",raw,"-vf",`scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,${lower}`,"-c:v","libx264","-pix_fmt","yuv420p","-c:a","aac",out]); return out; }
   await access(cfg.image); const audio=path.join(cfg.work,`voice-${index}.mp3`); await run("edge-tts",["--voice",cfg.edgeVoice,"--text",`${segment.categoryLabel}. ${segment.narration}`,"--write-media",audio]);
-  await ff(["-loop","1","-framerate","30","-i",cfg.image,"-i",audio,"-filter_complex",`[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='min(zoom+0.00025,1.035)':d=1:s=108px1920:fps=30,${lower}[v]`,"-map","[v]","-map","1:a","-shortest","-c:v","libx264","-pix_fmt","yuv420p","-c:a","aac",out]); return out;
+  await ff(["-loop","1","-framerate","30","-i",cfg.image,"-i",audio,"-filter_complex",`[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='min(zoom+0.00025,1.035)':d=1:s=1080x1920:fps=30,${lower}[v]`,"-map","[v]","-map","1:a","-shortest","-c:v","libx264","-pix_fmt","yuv420p","-c:a","aac",out]); return out;
 }
 async function title(text, file, f) { await ff(["-f","lavfi","-i","color=c=0x07183d:s=1080x1920:r=30:d=4","-f","lavfi","-i","anullsrc=r=44100:cl=stereo","-vf",`drawtext=fontfile='${esc(f)}':text='${esc(cfg.name)}':fontcolor=white:fontsize=82:x=(w-tw)/2:y=650,drawtext=fontfile='${esc(f)}':text='${esc(text)}':fontcolor=0xffc84d:fontsize=42:x=(w-tw)/2:y=820`,`-shortest`,`-c:v`,`libx264`,`-pix_fmt`,`yuv420p`,`-c:a`,`aac`,file]); return file; }
 async function main() {

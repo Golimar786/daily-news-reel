@@ -41,7 +41,7 @@ async function script(categories) {
   const prompt = `You are the cautious Hindi editor for ${cfg.name}. Return JSON only: {"caption":"string","segments":[{"categoryId":"national","categoryLabel":"string","headline":"string","narration":"string","sourceName":"string","sourceUrl":"string"}]}. Return exactly five segments in order national, international, economy, technology, sports. Each narration must be 55-65 natural Hindi words. Use ONLY supplied headlines. Never invent facts, numbers, quotes, causes, outcomes, or allegations. Keep neutral language and preserve a selected source name and URL.\n\n${sources}`;
   const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${cfg.model}:generateContent?key=${encodeURIComponent(cfg.key)}`, { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{responseMimeType:"application/json",temperature:0.1,maxOutputTokens:4096}}) });
   const body = await r.json(); if (!r.ok) throw new Error(body?.error?.message || "Gemini failed");
-  const text = body?.candidates?.[0]?.content?.parts?.map(p=>p.text||"").join(""); const result = JSON.parse(text);
+  const text = body?.candidates?.[0]?.content?.parts?.filter(p => !p.thought).map(p=>p.text||"").join(""); const result = JSON.parse(text);
   const ids = ["national","international","economy","technology","sports"];
   if (!Array.isArray(result.segments) || result.segments.length !== 5 || result.segments.some((s,i)=>s.categoryId !== ids[i])) throw new Error("The AI returned an incomplete bulletin.");
   return result;

@@ -7,7 +7,7 @@ const cfg = {
   name: env.CHANNEL_NAME || "देसी इंटरपोल",
   tagline: env.TAGLINE || "देश-दुनिया की बड़ी ख़बरें",
   key: env.GEMINI_API_KEY || "",
-  model: env.GEMINI_MODEL || "gemini-2.5-flash",
+  model: env.GEMINI_MODEL || "gemini-3.8-flash",
   image: path.resolve(env.ANCHOR_IMAGE_PATH || "assets/desi-interpol-anchor.jpg"),
   avatar: (env.AVATAR_PROVIDER || "static").toLowerCase(),
   didKey: env.DID_API_KEY || "",

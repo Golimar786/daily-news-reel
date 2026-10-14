@@ -16,7 +16,7 @@ const run = (bin, args) => new Promise((resolve, reject) => {
   child.on("close", code => code ? reject(new Error(bin + " exited with " + code)) : resolve());
 });
 
-const clean = value => String(value).replace(/<!\\[CDATA\\[|\\]\\]>/g, "").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/<[^>]+>/g, "").trim();
+const clean = value => String(value).replaceAll("&amp;", "&").replaceAll("&quot;", '"').trim();
 const sections = [["NATION", "राष्ट्रीय समाचार"], ["WORLD", "अंतरराष्ट्रीय समाचार"], ["BUSINESS", "अर्थव्यवस्था और कारोबार"], ["TECHNOLOGY", "तकनीक की दुनिया"], ["SPORTS", "खेल समाचार"]];
 
 async function headlines(topic, label) {
@@ -26,7 +26,7 @@ async function headlines(topic, label) {
     const response = await fetch(url);
     if (!response.ok) throw new Error("feed " + response.status);
     const xml = await response.text();
-    const titles = [...xml.matchAll(/<title>([\\s\\S]*?)<\\/title>/gi)].slice(1, 4).map(match => clean(match[1])).filter(Boolean);
+    const titles = xml.split("<title>").slice(2, 5).map(part => clean(part.split("</title>")[0])).filter(Boolean);
     if (titles.length) return { label, titles };
   } catch (error) {
     console.warn("Using fallback headlines for " + topic + ": " + error.message);

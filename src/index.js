@@ -3,7 +3,7 @@ import { spawn } from "node:child_process";
 import path from "node:path";
 
 const cfg = {
-  image: path.resolve(process.env.ANCHOR_IMAGE_PATH || "assets/Woman_sitting_at_news_desk_2K_20261014083729.jpg"),
+  image: path.resolve("assets/Woman_sitting_at_news_desk_2K_20261014083729.jpg"),
   name: process.env.CHANNEL_NAME || "देसी इंटरपोल",
   voice: process.env.EDGE_VOICE || "hi-IN-SwaraNeural",
   work: path.resolve("work"),

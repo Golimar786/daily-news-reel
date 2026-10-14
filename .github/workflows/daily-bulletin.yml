@@ -31,15 +31,10 @@ jobs:
       - name: Build Desi Interpol bulletin
         run: node src/index.js
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           CHANNEL_NAME: ${{ vars.CHANNEL_NAME || 'देसी इंटरपोल' }}
-          TAGLINE: ${{ vars.TAGLINE || 'देश-दुनिया की बड़ी ख़बरें' }}
-          ANCHOR_IMAGE_PATH: ${{ vars.ANCHOR_IMAGE_PATH || 'assets/desi-interpol-anchor.jpg' }}
-          AVATAR_PROVIDER: ${{ vars.AVATAR_PROVIDER || 'static' }}
-          DID_API_KEY: ${{ secrets.DID_API_KEY }}
-          DID_ANCHOR_IMAGE_URL: ${{ vars.DID_ANCHOR_IMAGE_URL }}
-          DID_VOICE_ID: ${{ vars.DID_VOICE_ID || 'hi-IN-SwaraNeural' }}
+          ANCHOR_IMAGE_PATH: ${{ vars.ANCHOR_IMAGE_PATH || 'assets/Woman_sitting_at_news_desk_2K_20261014083729.jpg' }}
           EDGE_VOICE: ${{ vars.EDGE_VOICE || 'hi-IN-SwaraNeural' }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
       - name: Upload video and editorial review files
         if: always()
         uses: actions/upload-artifact@v4

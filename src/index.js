@@ -56,7 +56,7 @@ async function main() {
   await writeFile(path.join(cfg.work, "bulletin.json"), JSON.stringify({ channel: cfg.name, generatedAt: new Date().toISOString(), items, narration }, null, 2));
   const audio = path.join(cfg.work, "narration.mp3");
   console.log("Creating Hindi narration with Edge TTS…");
-  await run("edge-tts", ["--voice", cfg.voice, "--rate", "-8%", "--text", narration, "--write-media", audio]);
+  await run("edge-tts", ["--voice", cfg.voice, "--rate=-8%", "--text", narration, "--write-media", audio]);
   const video = path.join(cfg.out, "desi-interpol-daily-bulletin.mp4");
   console.log("Rendering anchor bulletin video…");
   await run("ffmpeg", ["-hide_banner", "-loglevel", "error", "-y", "-loop", "1", "-i", cfg.image, "-i", audio, "-filter_complex", "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,format=yuv420p[v]", "-map", "[v]", "-map", "1:a", "-shortest", "-r", "30", "-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-c:a", "aac", "-b:a", "128k", video]);
